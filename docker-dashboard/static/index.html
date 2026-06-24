@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Sleep Study Dashboard</title>
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+    <div class="glow-container">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <!-- Main Layout Container (Sidebar + Main Content) -->
+    <div class="app-layout">
+        
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar glass">
+            <div class="brand-area">
+                <span class="brand-icon">🌙</span>
+                <h2>SleepStudy</h2>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-tab="dashboard">
+                    <span class="nav-icon">📊</span> Dashboard
+                </a>
+                <a href="#" class="nav-item" data-tab="connectors">
+                    <span class="nav-icon">🔌</span> Connectors
+                </a>
+                <a href="#" class="nav-item" data-tab="sleep-aids">
+                    <span class="nav-icon">🩹</span> Sleep Aids
+                </a>
+                
+                <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 16px 0;">
+                
+                <div id="btn-open-import" class="nav-item" style="cursor: pointer;">
+                    <span class="nav-icon">📤</span> Manual JSON Import
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer" style="margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.05); font-size: 11px; color: var(--color-text-dim); text-align: center;">
+                <span>v1.1.9</span>
+            </div>
+
+        </aside>
+
+        <!-- Right Main Panel Container -->
+        <div class="main-content">
+            
+            <!-- VIEW 1: DASHBOARD VIEW -->
+            <div id="view-dashboard" class="tab-view active">
+                
+                <!-- Dashboard Sub-Header -->
+                <header class="view-header glass">
+                    <div class="header-title">
+                        <h1>Sleep Dashboard</h1>
+                    </div>
+                </header>
+
+                <div class="dashboard-grid">
+                    <!-- Left Side: Review Panel & Charts (Time-Aligned) -->
+                    <section class="review-panel glass">
+                        <div class="panel-header">
+                            <div class="title-meta">
+                                <span class="section-tag">Analysis Mode</span>
+                                <h2 id="current-session-title">Select a session to review</h2>
+                                <p id="current-session-time">-</p>
+                            </div>
+                            <div class="session-stats" id="current-session-stats" style="display: none;">
+                                <div class="stat-card">
+                                    <span class="stat-lbl">Duration</span>
+                                    <span id="stat-duration" class="stat-val">0h 0m</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-lbl">Sleep Score</span>
+                                    <span id="stat-score" class="stat-val">-</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-lbl">Resting HR</span>
+                                    <span id="stat-resting-hr" class="stat-val">-</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-lbl">Avg HRV</span>
+                                    <span id="stat-avg-hrv" class="stat-val">-</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-lbl">HRV Status</span>
+                                    <span id="stat-hrv-status" class="stat-val" style="font-size: 13px; line-height: 1.8;">-</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-lbl">Body Battery</span>
+                                    <span id="stat-body-battery" class="stat-val">-</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-lbl">Snores</span>
+                                    <span id="stat-snores" class="stat-val">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="empty-analysis-state" class="empty-state">
+                            <div class="empty-icon">📊</div>
+                            <h3>No Sleep Session Selected</h3>
+                            <p>Click "Review" on any historical session below, trigger a Garmin sync in Connectors, or import a dataset to get started.</p>
+                        </div>
+
+                        <!-- Charts View -->
+                        <div id="analysis-charts-container" style="display: none;">
+                            
+                            <!-- 1. Sleep Stage Swimlanes -->
+                            <div class="chart-wrapper">
+                                <div class="chart-header">
+                                    <h3>Sleep Stages Comparison</h3>
+                                    <span class="info-tooltip" title="Compare sleep stage estimates from different algorithms aligned by time.">ℹ️</span>
+                                </div>
+                                <div id="stages-swimlane-container" class="swimlane-container">
+                                    <!-- Dynamic swimlanes -->
+                                </div>
+                                <div class="stage-legend">
+                                    <span class="legend-item"><span class="legend-dot stage-awake"></span> Awake</span>
+                                    <span class="legend-item"><span class="legend-dot stage-rem"></span> REM</span>
+                                    <span class="legend-item"><span class="legend-dot stage-light"></span> Light</span>
+                                    <span class="legend-item"><span class="legend-dot stage-deep"></span> Deep</span>
+                                </div>
+                            </div>
+
+                            <!-- 2. Overlaid Heart Rate & Respiration Chart -->
+                            <div class="chart-wrapper">
+                                <div class="chart-header">
+                                    <h3>Overnight Physiological Vitals</h3>
+                                    <div class="chart-options">
+                                        <span class="chart-badge hr-badge">Heart Rate (bpm)</span>
+                                        <span class="chart-badge br-badge">Respiration (br/min)</span>
+                                        <span class="chart-badge spo2-badge">SpO2 (%)</span>
+                                    </div>
+                                </div>
+                                <div class="canvas-holder">
+                                    <canvas id="chart-heart-respiration"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- 3. Overlaid Recovery & Energy Trends -->
+                            <div class="chart-wrapper">
+                                <div class="chart-header">
+                                    <h3>Recovery & Energy Trends</h3>
+                                    <div class="chart-options">
+                                        <span class="chart-badge stress-badge">Stress Score</span>
+                                        <span class="chart-badge bb-badge">Body Battery</span>
+                                        <span class="chart-badge hrv-badge">HRV (ms)</span>
+                                    </div>
+                                </div>
+                                <div class="canvas-holder">
+                                    <canvas id="chart-recovery"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- 4. Overlaid Sleep Noise & Stability Events -->
+                            <div class="chart-wrapper">
+                                <div class="chart-header">
+                                    <h3>Sleep Noise & Stability Events</h3>
+                                    <div class="chart-options">
+                                        <span class="chart-badge snore-badge">Snores (sec)</span>
+                                        <span class="chart-badge cough-badge">Coughs (count)</span>
+                                        <span class="chart-badge bd-badge">Breathing Disruptions</span>
+                                    </div>
+                                </div>
+                                <div class="canvas-holder">
+                                    <canvas id="chart-snore-cough"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Right Side: Journal / Notes Panel -->
+                    <section class="journal-panel glass">
+                        <h3>Sleep Journal</h3>
+                        <div id="journal-session-loaded" style="display: none;">
+                            <form id="journal-form">
+                                <div class="form-group">
+                                    <label>Sleep Quality Rating</label>
+                                    <div class="rating-stars">
+                                        <input type="radio" id="star5" name="rating" value="5"><label for="star5" title="Excellent">★</label>
+                                        <input type="radio" id="star4" name="rating" value="4"><label for="star4" title="Good">★</label>
+                                        <input type="radio" id="star3" name="rating" value="3"><label for="star3" title="Average">★</label>
+                                        <input type="radio" id="star2" name="rating" value="2"><label for="star2" title="Poor">★</label>
+                                        <input type="radio" id="star1" name="rating" value="1"><label for="star1" title="Terrible">★</label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="journal-position">Sleep Position</label>
+                                    <select id="journal-position">
+                                        <option value="">Select Position...</option>
+                                        <option value="Back">Back</option>
+                                        <option value="Left Side">Left Side</option>
+                                        <option value="Right Side">Right Side</option>
+                                        <option value="Stomach">Stomach</option>
+                                        <option value="Mixed">Mixed/Other</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Sleep Aids Used</label>
+                                    <div id="journal-sleep-aids-pool" class="tag-pool">
+                                        <!-- Rendered dynamically -->
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="journal-notes">Notes & Sleep Habits</label>
+                                    <textarea id="journal-notes" rows="4" placeholder="Add notes about your sleep habits..."></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-submit btn-block">Save Journal Entry</button>
+                            </form>
+                        </div>
+                        <div id="journal-session-empty" class="empty-state mini">
+                            <p>Select a sleep session to write or edit notes.</p>
+                        </div>
+                    </section>
+
+                    <!-- Bottom: Previous Sleep Sessions List -->
+                    <section class="history-panel glass">
+                        <div class="panel-header">
+                            <h2>Previous Sleep Sessions</h2>
+                        </div>
+                        <div class="history-table-wrapper">
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Sleep Time Window</th>
+                                        <th>Duration</th>
+                                        <th>Score</th>
+                                        <th>Rating</th>
+                                        <th>Notes Summary</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body">
+                                    <tr>
+                                        <td colspan="7" class="loading-row">Fetching sleep history...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- VIEW 2: CONNECTORS CONFIGURATION VIEW -->
+            <div id="view-connectors" class="tab-view">
+                <header class="view-header glass">
+                    <div class="header-title">
+                        <h1>Data Connectors</h1>
+                        <span class="badge badge-primary">Acquisition Framework</span>
+                    </div>
+                </header>
+
+                <div class="connectors-deck">
+                    
+                    <!-- Garmin Connector Card -->
+                    <div class="connector-card glass">
+                        <div class="connector-card-header">
+                            <div class="connector-meta">
+                                <span class="connector-icon">⌚</span>
+                                <div>
+                                    <h2>Garmin Connect</h2>
+                                    <p>Fetch sleep sessions and physiological vitals automatically from Garmin cloud.</p>
+                                </div>
+                            </div>
+                            <span id="garmin-status-badge" class="status-indicator status-disconnected">Not Configured</span>
+                        </div>
+
+                        <div class="connector-card-body">
+                            <form id="garmin-config-form" class="config-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="garmin-email">Garmin Email Address</label>
+                                        <input type="email" id="garmin-email" placeholder="example@email.com" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="garmin-password">Garmin Password</label>
+                                        <input type="password" id="garmin-password" placeholder="••••••••••••" required>
+                                    </div>
+                                </div>
+                                <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px; margin-bottom: 16px;">
+                                    <input type="checkbox" id="garmin-auto-sync" style="width: auto; cursor: pointer;">
+                                    <label for="garmin-auto-sync" style="cursor: pointer; margin-bottom: 0;">Enable Auto-Sync (Automatically downloads today's sleep data every hour)</label>
+                                </div>
+                                <button type="submit" class="btn btn-secondary">Save Settings & Credentials</button>
+                            </form>
+
+                            <hr class="card-divider">
+
+                            <div class="sync-actions-panel">
+                                <h3>Trigger Data Sync</h3>
+                                <p class="section-desc">Download sleep data for a specific morning (fetches the previous night's sleep).</p>
+                                
+                                <div class="sync-controls">
+                                    <div class="form-group">
+                                        <label for="garmin-sync-date">Sleep Date (YYYY-MM-DD)</label>
+                                        <input type="date" id="garmin-sync-date">
+                                    </div>
+                                    <button id="btn-sync-garmin" class="btn btn-primary">Run Sync Now</button>
+                                </div>
+
+                                <div class="log-panel-wrapper">
+                                    <label>Synchronization Output Log</label>
+                                    <pre id="garmin-sync-log" class="sync-log-box">Awaiting sync trigger...</pre>
+                                </div>
+
+                                <div class="diagnostics-panel" style="margin-top: 20px; border-top: 1px dashed rgba(255, 255, 255, 0.06); padding-top: 20px;">
+                                    <label style="display: block; font-size: 13px; font-weight: 500; color: var(--color-text-muted); margin-bottom: 8px;">Garmin Raw Payloads (Diagnostics)</label>
+                                    <p class="section-desc" style="margin-bottom: 10px;">Select a synced date to view or copy the raw Garmin API JSON payload for troubleshooting.</p>
+                                    <div class="debug-controls" style="display: flex; gap: 10px;">
+                                        <select id="garmin-raw-select" style="flex: 1;">
+                                            <option value="">No synced files found</option>
+                                        </select>
+                                        <button id="btn-copy-raw-garmin" class="btn btn-secondary" style="white-space: nowrap;">Copy JSON</button>
+                                        <button id="btn-download-raw-garmin" class="btn btn-secondary" style="white-space: nowrap;">Download</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Snore & Cough Custom App Card -->
+                    <div class="connector-card glass">
+                        <div class="connector-card-header">
+                            <div class="connector-meta">
+                                <span class="connector-icon">🎤</span>
+                                <div>
+                                    <h2>Snore & Cough Custom App <span class="badge-preview">Preview</span></h2>
+                                    <p>Custom API connection. Ingests sleep sound events (snoring duration and coughing count) pushed directly from your custom client app.</p>
+                                </div>
+                            </div>
+                            <span class="status-indicator status-ready">API Listener Ready</span>
+                        </div>
+                        <div class="connector-card-body">
+                            <div class="connector-details-layout">
+                                <div class="endpoint-details">
+                                    <div class="form-group">
+                                        <label>Push API Endpoint URL (HTTP POST)</label>
+                                        <div class="input-copy-group">
+                                            <input type="text" id="sc-endpoint-input" readonly value="http://your-server-ip:8000/api/connectors/snore_cough_app/import">
+                                            <button class="btn btn-secondary btn-sm" onclick="copyEndpointUrl('sc-endpoint-input')">Copy URL</button>
+                                        </div>
+                                    </div>
+                                    <div class="instructions-box">
+                                        <h4>Expected JSON Payload Format:</h4>
+                                        <pre style="background: rgba(0, 0, 0, 0.4); padding: 12px; border-radius: 6px; overflow-x: auto; color: #a7f3d0; font-family: monospace; font-size: 0.85em;">{
+  "date": "YYYY-MM-DD",
+  "start_time": "YYYY-MM-DDTHH:MM:SS",
+  "end_time": "YYYY-MM-DDTHH:MM:SS",
+  "snore_events": [
+    { "timestamp": "ISO_8601", "duration": 18 }
+  ],
+  "cough_events": [
+    { "timestamp": "ISO_8601", "count": 2 }
+  ]
+}</pre>
+                                    </div>
+                                </div>
+                                <div class="qr-code-box">
+                                    <canvas id="sc-qr-canvas"></canvas>
+                                    <span class="qr-code-lbl">Scan to Enroll App</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sleep as Android Webhook Card -->
+                    <div class="connector-card glass">
+                        <div class="connector-card-header">
+                            <div class="connector-meta">
+                                <span class="connector-icon">🔊</span>
+                                <div>
+                                    <h2>Sleep as Android Webhook <span class="badge-preview">Preview</span></h2>
+                                    <p>Webhook connection to log real-time snoring/coughing audio events as they occur.</p>
+                                </div>
+                            </div>
+                            <span class="status-indicator status-ready">Webhook Listener Ready</span>
+                        </div>
+                        <div class="connector-card-body">
+                            <div class="endpoint-details">
+                                <div class="form-group">
+                                    <label>Webhook Endpoint URL (HTTP POST)</label>
+                                    <div class="input-copy-group">
+                                        <input type="text" id="saa-endpoint-input" readonly value="http://your-server-ip:8000/api/connectors/sleep_as_android/import">
+                                        <button class="btn btn-secondary btn-sm" onclick="copyEndpointUrl('saa-endpoint-input')">Copy URL</button>
+                                    </div>
+                                </div>
+                                <div class="instructions-box">
+                                    <h4>Setting up webhooks in Sleep as Android:</h4>
+                                    <ol>
+                                        <li>Open **Sleep as Android** settings.</li>
+                                        <li>Navigate to **Services** → **Automation** → **Webhooks**.</li>
+                                        <li>Enable **Webhooks** and paste this URL into the endpoint field.</li>
+                                        <li>The app will automatically send snore/cough counts during sleep tracking.</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- VIEW 3: SLEEP AIDS CONFIGURATION VIEW -->
+            <div id="view-sleep-aids" class="tab-view">
+                <header class="view-header glass">
+                    <div class="header-title">
+                        <h1>Sleep Aids</h1>
+                        <span class="badge badge-primary">Configuration</span>
+                    </div>
+                </header>
+
+                <div class="connector-card glass">
+                    <div class="connector-card-header">
+                        <div class="connector-meta">
+                            <span class="connector-icon">🩹</span>
+                            <div>
+                                <h2>Sleep Aid Tags</h2>
+                                <p>Create and manage custom sleep aid tags (e.g. Nose Strips, Eye Mask, Earplugs) to tag your sleep journal entries.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="connector-card-body">
+                        <!-- Add sleep aid form -->
+                        <form id="add-sleep-aid-form" class="config-form" style="margin-bottom: 24px;">
+                            <div style="display: flex; gap: 12px; align-items: flex-end;">
+                                <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
+                                    <label for="new-sleep-aid-name">New Sleep Aid Tag</label>
+                                    <input type="text" id="new-sleep-aid-name" placeholder="e.g. Nose Strips" required autocomplete="off">
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="height: 42px;">Add Tag</button>
+                            </div>
+                        </form>
+
+                        <hr class="card-divider">
+
+                        <!-- Configured sleep aids list -->
+                        <h3>Currently Configured Tags</h3>
+                        <p class="section-desc" style="margin-bottom: 16px;">Delete tags you no longer wish to see. Existing journal entries will retain their tags.</p>
+                        <div id="sleep-aids-config-list" class="tag-pool">
+                            <!-- Dynamic list of tags with a delete button -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Manual Import Modal -->
+    <div id="import-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h2>Import Sleep Dataset</h2>
+                <button id="btn-close-import" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">Select which data source/connector payload format you are uploading.</p>
+                
+                <div class="form-group">
+                    <label for="import-connector-select">Select Data Source</label>
+                    <select id="import-connector-select">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+
+                <div class="form-group upload-box-wrapper">
+                    <div id="drop-zone" class="upload-drop-zone">
+                        <span class="upload-icon">📁</span>
+                        <p>Drag and drop your JSON mock payload here, or <span class="highlight">browse files</span></p>
+                        <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                    </div>
+                </div>
+
+                <div id="import-feedback" class="feedback-msg" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel-import" class="btn btn-secondary">Cancel</button>
+                <button id="btn-submit-import" class="btn btn-primary" disabled>Import File</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="qrious.min.js?v=2"></script>
+    <script src="app.js?v=3"></script>
+</body>
+</html>
