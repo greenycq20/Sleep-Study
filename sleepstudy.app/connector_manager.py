@@ -89,7 +89,8 @@ def import_raw_payload(db: Session, connector_id: str, raw_payload: dict):
         resting_heart_rate=session_info.get("resting_heart_rate"),
         avg_overnight_hrv=session_info.get("avg_overnight_hrv"),
         hrv_status=session_info.get("hrv_status"),
-        body_battery_change=session_info.get("body_battery_change")
+        body_battery_change=session_info.get("body_battery_change"),
+        overwrite_times=session_info.get("overwrite_times", True)
     )
     
     # 3. Add session_id to samples and bulk insert

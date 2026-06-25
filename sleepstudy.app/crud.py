@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
@@ -17,19 +18,23 @@ def create_sleep_session(
     db: Session, 
     session_id: str, 
     date: str, 
-    start_time: datetime, 
-    end_time: datetime, 
+    start_time: Optional[datetime], 
+    end_time: Optional[datetime], 
     sleep_score: int = None,
     resting_heart_rate: int = None,
     avg_overnight_hrv: int = None,
     hrv_status: str = None,
-    body_battery_change: int = None
+    body_battery_change: int = None,
+    overwrite_times: bool = True
 ):
     """Create a new sleep session or update start/end times if it already exists."""
     db_session = get_sleep_session(db, session_id)
     if db_session:
-        db_session.start_time = start_time
-        db_session.end_time = end_time
+        if overwrite_times:
+            if start_time is not None:
+                db_session.start_time = start_time
+            if end_time is not None:
+                db_session.end_time = end_time
         if sleep_score is not None:
             db_session.sleep_score = sleep_score
         if resting_heart_rate is not None:
@@ -41,11 +46,13 @@ def create_sleep_session(
         if body_battery_change is not None:
             db_session.body_battery_change = body_battery_change
     else:
+        fallback_start = start_time if start_time is not None else datetime.now()
+        fallback_end = end_time if end_time is not None else fallback_start
         db_session = db_models.SleepSession(
             id=session_id,
             date=date,
-            start_time=start_time,
-            end_time=end_time,
+            start_time=fallback_start,
+            end_time=fallback_end,
             sleep_score=sleep_score,
             resting_heart_rate=resting_heart_rate,
             avg_overnight_hrv=avg_overnight_hrv,
