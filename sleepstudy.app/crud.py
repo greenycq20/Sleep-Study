@@ -32,9 +32,15 @@ def create_sleep_session(
     if db_session:
         if overwrite_times:
             if start_time is not None:
-                db_session.start_time = start_time
+                if db_session.start_time:
+                    db_session.start_time = min(db_session.start_time, start_time)
+                else:
+                    db_session.start_time = start_time
             if end_time is not None:
-                db_session.end_time = end_time
+                if db_session.end_time:
+                    db_session.end_time = max(db_session.end_time, end_time)
+                else:
+                    db_session.end_time = end_time
         if sleep_score is not None:
             db_session.sleep_score = sleep_score
         if resting_heart_rate is not None:
