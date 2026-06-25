@@ -2,7 +2,7 @@
 
 A self-hosted, offline-first dashboard designed to review, align, and annotate sleep datasets. It combines cloud-synced wellness stats from **Garmin Connect** with custom time-series snoring and coughing metrics pushed from secondary tracking devices or apps.
 
-![sleepstudy.app Dashboard Screenshot](docker-dashboard/docs/Dashboard.png)
+![sleepstudy.app Dashboard Screenshot](docs/Dashboard.png)
 
 ---
 
