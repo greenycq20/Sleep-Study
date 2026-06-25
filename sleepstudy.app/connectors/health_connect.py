@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+from sqlalchemy.orm import Session
 from connectors.base import BaseConnector
 
 class HealthConnectConnector(BaseConnector):
@@ -15,7 +16,7 @@ class HealthConnectConnector(BaseConnector):
     def description(self) -> str:
         return "Ingests sleep, heart rate, oxygen saturation, and noise event logs (snore, cough) synced from Android devices."
 
-    def parse_payload(self, raw_payload: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_payload(self, raw_payload: Dict[str, Any], db: Optional[Session] = None) -> Dict[str, Any]:
         try:
             # Validate core fields
             session_id = raw_payload.get("session_id")

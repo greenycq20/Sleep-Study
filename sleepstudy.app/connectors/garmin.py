@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
 
 import config
@@ -158,7 +158,7 @@ class GarminConnector(BaseConnector):
         # 6. Parse and return standard dataset format
         return self.parse_payload(combined_payload)
 
-    def parse_payload(self, raw_payload: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_payload(self, raw_payload: Dict[str, Any], db: Optional[Session] = None) -> Dict[str, Any]:
         try:
             # Check if this is the official Garmin Connect API response structure
             if "api_response" in raw_payload:

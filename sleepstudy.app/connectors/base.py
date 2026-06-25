@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+from sqlalchemy.orm import Session
 
 class BaseConnector(ABC):
     """
@@ -26,7 +27,7 @@ class BaseConnector(ABC):
         pass
 
     @abstractmethod
-    def parse_payload(self, raw_payload: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_payload(self, raw_payload: Dict[str, Any], db: Optional[Session] = None) -> Dict[str, Any]:
         """
         Parses a raw incoming JSON payload and converts it into standard structures
         suitable for database insertion.

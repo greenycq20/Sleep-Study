@@ -72,10 +72,7 @@ def import_raw_payload(db: Session, connector_id: str, raw_payload: dict):
         raise ValueError(f"Connector '{connector_id}' is not loaded or does not exist.")
         
     # 1. Parse the payload using the connector
-    if connector_id == "sleep_as_android":
-        parsed_data = connector.parse_payload(raw_payload, db=db)
-    else:
-        parsed_data = connector.parse_payload(raw_payload)
+    parsed_data = connector.parse_payload(raw_payload, db=db)
     session_info = parsed_data["session"]
     samples_list = parsed_data["samples"]
     
