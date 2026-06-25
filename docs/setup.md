@@ -58,6 +58,7 @@ The dashboard database uses a single **SQLite** file.
    - `body_battery_change` (Integer): Net change in body battery.
    - `sleep_position` (String): Logged sleep position.
    - `sleep_aids` (String): Comma-separated list of sleep aid tags.
+   - `sleep_disruptors` (String): Comma-separated list of sleep disruptor tags.
 
 2. **`sleep_metric_samples`**:
    - `id` (Integer): Auto-increment primary key.
@@ -72,6 +73,7 @@ The dashboard database uses a single **SQLite** file.
 3. **`sleep_aids`**:
    - `id` (Integer): Primary key.
    - `name` (String): Custom tag name (e.g. `Nose Strips`).
+   - `category` (String): Tag category ('aid' or 'disruptor').
 
 4. **`connector_configs`**:
    - `connector_id` (String): e.g. `garmin`.

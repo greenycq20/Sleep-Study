@@ -6,6 +6,7 @@ let recoveryChart = null;
 let snoreCoughChart = null;
 let globalSleepAids = [];
 let selectedSleepAids = new Set();
+let selectedSleepDisruptors = new Set();
 
 // --- DOM Elements ---
 const elConnectorBadges = document.getElementById("connector-badges");
@@ -31,9 +32,12 @@ const elJournalForm = document.getElementById("journal-form");
 const elJournalNotes = document.getElementById("journal-notes");
 const elJournalPosition = document.getElementById("journal-position");
 const elJournalSleepAidsPool = document.getElementById("journal-sleep-aids-pool");
+const elJournalSleepDisruptorsPool = document.getElementById("journal-sleep-disruptors-pool");
 const elSleepAidsConfigList = document.getElementById("sleep-aids-config-list");
+const elSleepDisruptorsConfigList = document.getElementById("sleep-disruptors-config-list");
 const elAddSleepAidForm = document.getElementById("add-sleep-aid-form");
 const elNewSleepAidName = document.getElementById("new-sleep-aid-name");
+const elNewSleepAidCategory = document.getElementById("new-sleep-aid-category");
 
 // Modal Elements
 const elImportModal = document.getElementById("import-modal");
@@ -76,6 +80,15 @@ function saveTimezoneOffset() {
 
 // --- Initialize App ---
 document.addEventListener("DOMContentLoaded", () => {
+    // Restore sidebar state from localStorage
+    const isSidebarCollapsed = localStorage.getItem("sidebar-collapsed") === "true";
+    const layoutEl = document.querySelector(".app-layout");
+    if (isSidebarCollapsed && layoutEl) {
+        layoutEl.classList.add("sidebar-collapsed");
+        const btnSidebarToggle = document.getElementById("sidebar-toggle");
+        if (btnSidebarToggle) btnSidebarToggle.innerText = "▶";
+    }
+
     saveTimezoneOffset();
     fetchConnectors();
     fetchSessions();
@@ -94,11 +107,22 @@ function setupNavigation() {
 
     navItems.forEach(item => {
         item.addEventListener("click", (e) => {
-            e.preventDefault();
             const targetTab = item.getAttribute("data-tab");
+            if (!targetTab) return; // Prevent import button from overriding active tab state
+
+            e.preventDefault();
+
+            // Close mobile sidebar if open
+            if (document.body.classList.contains("mobile-sidebar-open")) {
+                document.body.classList.remove("mobile-sidebar-open");
+            }
 
             // Toggle Nav Item Active State
-            navItems.forEach(nav => nav.classList.remove("active"));
+            navItems.forEach(nav => {
+                if (nav.getAttribute("data-tab")) {
+                    nav.classList.remove("active");
+                }
+            });
             item.classList.add("active");
 
             // Toggle Tab View Active State
@@ -390,6 +414,7 @@ async function saveJournalNotes(e) {
 
     const positionVal = elJournalPosition.value || null;
     const aidsVal = Array.from(selectedSleepAids).join(",") || null;
+    const disruptorsVal = Array.from(selectedSleepDisruptors).join(",") || null;
 
     if (!ratingVal) {
         alert("Please select a sleep quality rating first.");
@@ -404,7 +429,8 @@ async function saveJournalNotes(e) {
                 rating: parseInt(ratingVal, 10),
                 notes: notesText,
                 sleep_position: positionVal,
-                sleep_aids: aidsVal
+                sleep_aids: aidsVal,
+                sleep_disruptors: disruptorsVal
             })
         });
 
@@ -493,6 +519,9 @@ function renderSessionsTable(sessions) {
         if (s.sleep_aids) {
             notesParts.push(`Aids: ${s.sleep_aids}`);
         }
+        if (s.sleep_disruptors) {
+            notesParts.push(`Disruptors: ${s.sleep_disruptors}`);
+        }
         if (s.notes) {
             notesParts.push(s.notes);
         }
@@ -576,6 +605,16 @@ function renderSessionAnalysis(data) {
         });
     }
     renderJournalSleepAidsPool();
+
+    // Populate Sleep Disruptors
+    selectedSleepDisruptors.clear();
+    if (s.sleep_disruptors) {
+        s.sleep_disruptors.split(",").forEach(dis => {
+            const trimmed = dis.trim();
+            if (trimmed) selectedSleepDisruptors.add(trimmed);
+        });
+    }
+    renderJournalSleepDisruptorsPool();
     
     // Reset star rating check
     const checkedStar = document.querySelector('input[name="rating"]:checked');
@@ -1259,6 +1298,67 @@ function setupEventListeners() {
 
     // Submit File Ingestion
     elBtnSubmitImport.addEventListener("click", submitImport);
+
+    // Desktop Sidebar Collapse Toggle
+    const btnSidebarToggle = document.getElementById("sidebar-toggle");
+    const btnMobileToggle = document.getElementById("mobile-sidebar-toggle");
+    const elSidebarOverlay = document.getElementById("sidebar-overlay");
+    const sidebarEl = document.querySelector(".sidebar");
+    const layoutEl = document.querySelector(".app-layout");
+
+    if (btnSidebarToggle && layoutEl) {
+        btnSidebarToggle.addEventListener("click", () => {
+            const isCollapsed = layoutEl.classList.toggle("sidebar-collapsed");
+            localStorage.setItem("sidebar-collapsed", isCollapsed);
+            btnSidebarToggle.innerText = isCollapsed ? "▶" : "◀";
+            // Trigger chart redraw during sidebar collapse animation
+            resizeAllCharts();
+        });
+    }
+
+    // Sidebar transitionend listener to finalize chart resizing
+    if (sidebarEl) {
+        sidebarEl.addEventListener("transitionend", (e) => {
+            if (e.propertyName === "width" || e.propertyName === "transform") {
+                resizeAllCharts();
+            }
+        });
+    }
+
+    // Mobile Hamburger Toggle
+    if (btnMobileToggle) {
+        btnMobileToggle.addEventListener("click", () => {
+            document.body.classList.add("mobile-sidebar-open");
+        });
+    }
+
+    // Mobile Sidebar Backdrop Overlay Click
+    if (elSidebarOverlay) {
+        elSidebarOverlay.addEventListener("click", () => {
+            document.body.classList.remove("mobile-sidebar-open");
+        });
+    }
+
+    // Window Resize Event
+    window.addEventListener("resize", () => {
+        resizeAllCharts();
+    });
+}
+
+// --- Responsive Layout & Dynamic Chart Resizing Logic ---
+function resizeAllCharts() {
+    if (hrBrChart) {
+        hrBrChart.resize();
+        hrBrChart.update('none');
+    }
+    if (recoveryChart) {
+        recoveryChart.resize();
+        recoveryChart.update('none');
+    }
+    if (snoreCoughChart) {
+        snoreCoughChart.resize();
+        snoreCoughChart.update('none');
+    }
 }
 
 function handleFileSelect(file) {
@@ -1336,7 +1436,9 @@ async function fetchSleepAids() {
         if (response.ok) {
             globalSleepAids = await response.json();
             renderSleepAidsConfigList();
+            renderSleepDisruptorsConfigList();
             renderJournalSleepAidsPool();
+            renderJournalSleepDisruptorsPool();
         }
     } catch (err) {
         console.error("Error fetching sleep aids:", err);
@@ -1345,12 +1447,13 @@ async function fetchSleepAids() {
 
 function renderSleepAidsConfigList() {
     if (!elSleepAidsConfigList) return;
-    if (globalSleepAids.length === 0) {
-        elSleepAidsConfigList.innerHTML = `<span class="color-text-dim" style="font-size: 13px;">No tags created yet. Use the form above to add your first tag.</span>`;
+    const aids = globalSleepAids.filter(x => x.category === "aid");
+    if (aids.length === 0) {
+        elSleepAidsConfigList.innerHTML = `<span class="color-text-dim" style="font-size: 13px;">No aids configured.</span>`;
         return;
     }
     
-    elSleepAidsConfigList.innerHTML = globalSleepAids.map(aid => `
+    elSleepAidsConfigList.innerHTML = aids.map(aid => `
         <span class="tag-pill">
             ${escapeHtml(aid.name)}
             <span class="tag-pill-delete" onclick="deleteSleepAid(${aid.id}, '${escapeHtml(aid.name)}')">&times;</span>
@@ -1358,18 +1461,53 @@ function renderSleepAidsConfigList() {
     `).join("");
 }
 
+function renderSleepDisruptorsConfigList() {
+    if (!elSleepDisruptorsConfigList) return;
+    const disruptors = globalSleepAids.filter(x => x.category === "disruptor");
+    if (disruptors.length === 0) {
+        elSleepDisruptorsConfigList.innerHTML = `<span class="color-text-dim" style="font-size: 13px;">No disruptors configured.</span>`;
+        return;
+    }
+    
+    elSleepDisruptorsConfigList.innerHTML = disruptors.map(dis => `
+        <span class="tag-pill">
+            ${escapeHtml(dis.name)}
+            <span class="tag-pill-delete" onclick="deleteSleepAid(${dis.id}, '${escapeHtml(dis.name)}')">&times;</span>
+        </span>
+    `).join("");
+}
+
 function renderJournalSleepAidsPool() {
     if (!elJournalSleepAidsPool) return;
-    if (globalSleepAids.length === 0) {
-        elJournalSleepAidsPool.innerHTML = `<span class="color-text-dim" style="font-size: 12px;">No aids configured. Add them under the "Sleep Aids" menu.</span>`;
+    const aids = globalSleepAids.filter(x => x.category === "aid");
+    if (aids.length === 0) {
+        elJournalSleepAidsPool.innerHTML = `<span class="color-text-dim" style="font-size: 12px;">No aids configured. Add them under "Sleep Factors".</span>`;
         return;
     }
 
-    elJournalSleepAidsPool.innerHTML = globalSleepAids.map(aid => {
+    elJournalSleepAidsPool.innerHTML = aids.map(aid => {
         const isActive = selectedSleepAids.has(aid.name);
         return `
             <span class="tag-pill ${isActive ? 'active' : ''}" data-name="${escapeHtml(aid.name)}" onclick="toggleJournalSleepAid(this)">
                 ${escapeHtml(aid.name)}
+            </span>
+        `;
+    }).join("");
+}
+
+function renderJournalSleepDisruptorsPool() {
+    if (!elJournalSleepDisruptorsPool) return;
+    const disruptors = globalSleepAids.filter(x => x.category === "disruptor");
+    if (disruptors.length === 0) {
+        elJournalSleepDisruptorsPool.innerHTML = `<span class="color-text-dim" style="font-size: 12px;">No disruptors configured. Add them under "Sleep Factors".</span>`;
+        return;
+    }
+
+    elJournalSleepDisruptorsPool.innerHTML = disruptors.map(dis => {
+        const isActive = selectedSleepDisruptors.has(dis.name);
+        return `
+            <span class="tag-pill disruptor ${isActive ? 'active' : ''}" data-name="${escapeHtml(dis.name)}" onclick="toggleJournalSleepDisruptor(this)">
+                ${escapeHtml(dis.name)}
             </span>
         `;
     }).join("");
@@ -1386,16 +1524,28 @@ function toggleJournalSleepAid(el) {
     }
 }
 
+function toggleJournalSleepDisruptor(el) {
+    const name = el.getAttribute("data-name");
+    if (selectedSleepDisruptors.has(name)) {
+        selectedSleepDisruptors.delete(name);
+        el.classList.remove("active");
+    } else {
+        selectedSleepDisruptors.add(name);
+        el.classList.add("active");
+    }
+}
+
 async function addSleepAid(e) {
     e.preventDefault();
     const name = elNewSleepAidName.value.trim();
+    const category = elNewSleepAidCategory ? elNewSleepAidCategory.value : "aid";
     if (!name) return;
 
     try {
         const response = await fetch("/api/sleep_aids", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: name })
+            body: JSON.stringify({ name: name, category: category })
         });
 
         if (response.ok) {
@@ -1403,16 +1553,16 @@ async function addSleepAid(e) {
             await fetchSleepAids();
         } else {
             const err = await response.json();
-            alert(err.detail || "Failed to create sleep aid tag.");
+            alert(err.detail || "Failed to create tag.");
         }
     } catch (err) {
-        console.error("Error creating sleep aid:", err);
-        alert("Error creating sleep aid.");
+        console.error("Error creating tag:", err);
+        alert("Error creating tag.");
     }
 }
 
 async function deleteSleepAid(id, name) {
-    if (!confirm(`Are you sure you want to delete the "${name}" sleep aid tag?`)) {
+    if (!confirm(`Are you sure you want to delete the "${name}" tag?`)) {
         return;
     }
 
@@ -1425,11 +1575,11 @@ async function deleteSleepAid(id, name) {
             await fetchSleepAids();
         } else {
             const err = await response.json();
-            alert(err.detail || "Failed to delete sleep aid tag.");
+            alert(err.detail || "Failed to delete tag.");
         }
     } catch (err) {
-        console.error("Error deleting sleep aid:", err);
-        alert("Error deleting sleep aid.");
+        console.error("Error deleting tag:", err);
+        alert("Error deleting tag.");
     }
 }
 

@@ -35,6 +35,7 @@ class SleepSession(Base):
     body_battery_change = Column(Integer, nullable=True)
     sleep_position = Column(String, nullable=True)
     sleep_aids = Column(String, nullable=True)
+    sleep_disruptors = Column(String, nullable=True)
 
     # Relationships
     metrics = relationship("SleepMetricSample", back_populates="session", cascade="all, delete-orphan")
@@ -54,6 +55,7 @@ class SleepSession(Base):
             "body_battery_change": self.body_battery_change,
             "sleep_position": self.sleep_position,
             "sleep_aids": self.sleep_aids,
+            "sleep_disruptors": self.sleep_disruptors,
         }
 
 
@@ -110,17 +112,19 @@ class ConnectorConfig(Base):
 
 class SleepAid(Base):
     """
-    Stores custom sleep aid tags defined by the user (e.g., Nose Strips, Eye Mask).
+    Stores custom sleep aid and disruptor tags defined by the user.
     """
     __tablename__ = "sleep_aids"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False, index=True)
+    category = Column(String, nullable=False, default="aid", server_default="aid")
 
     def to_dict(self):
         return {
             "id": self.id,
-            "name": self.name
+            "name": self.name,
+            "category": self.category
         }
 
 
@@ -140,7 +144,8 @@ def init_db():
         "hrv_status": "VARCHAR",
         "body_battery_change": "INTEGER",
         "sleep_position": "VARCHAR",
-        "sleep_aids": "VARCHAR"
+        "sleep_aids": "VARCHAR",
+        "sleep_disruptors": "VARCHAR"
     }
     
     with engine.begin() as conn:
@@ -148,3 +153,40 @@ def init_db():
             if col_name not in columns:
                 print(f"Migration: Adding missing column '{col_name}' to table 'sleep_sessions'...")
                 conn.execute(text(f"ALTER TABLE sleep_sessions ADD COLUMN {col_name} {col_type}"))
+                
+    # 3. Check for missing columns in sleep_aids (self-healing migration)
+    columns_aids = [col["name"] for col in inspector.get_columns("sleep_aids")]
+    if "category" not in columns_aids:
+        print("Migration: Adding missing column 'category' to table 'sleep_aids'...")
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE sleep_aids ADD COLUMN category VARCHAR DEFAULT 'aid'"))
+
+    # 4. Pre-populate default sleep aids and disruptors if table is empty
+    db = SessionLocal()
+    try:
+        if db.query(SleepAid).count() == 0:
+            default_aids = [
+                ("Nose Strips", "aid"),
+                ("Eye Mask", "aid"),
+                ("Earplugs", "aid"),
+                ("Mouth Tape", "aid"),
+                ("Humidifier", "aid")
+            ]
+            default_disruptors = [
+                ("Alcohol", "disruptor"),
+                ("Late Caffeine", "disruptor"),
+                ("Late Heavy Meal", "disruptor"),
+                ("Late Screen Time", "disruptor"),
+                ("Stressful Evening", "disruptor"),
+                ("Late Intense Exercise", "disruptor"),
+                ("Sugar / Late Snack", "disruptor")
+            ]
+            for name, category in default_aids + default_disruptors:
+                db.add(SleepAid(name=name, category=category))
+            db.commit()
+            print("Database: Pre-populated default sleep aids and disruptors.")
+    except Exception as e:
+        db.rollback()
+        print(f"Error pre-populating default tags: {e}")
+    finally:
+        db.close()

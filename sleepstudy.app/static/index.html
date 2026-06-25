@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
     <div class="glow-container">
@@ -27,23 +27,28 @@
             <div class="brand-area">
                 <img src="logo.png" alt="logo" style="width: 28px; height: 28px; object-fit: contain; border-radius: 6px;">
                 <h2>SleepStudy</h2>
+                <button id="sidebar-toggle" class="sidebar-toggle-btn" title="Toggle Sidebar">◀</button>
             </div>
             
             <nav class="nav-menu">
                 <a href="#" class="nav-item active" data-tab="dashboard">
-                    <span class="nav-icon">📊</span> Dashboard
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
                 </a>
                 <a href="#" class="nav-item" data-tab="connectors">
-                    <span class="nav-icon">🔌</span> Connectors
+                    <span class="nav-icon">🔌</span>
+                    <span class="nav-text">Connectors</span>
                 </a>
                 <a href="#" class="nav-item" data-tab="sleep-aids">
-                    <span class="nav-icon">🩹</span> Sleep Aids
+                    <span class="nav-icon">🩹</span>
+                    <span class="nav-text">Sleep Factors</span>
                 </a>
                 
                 <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 16px 0;">
                 
                 <div id="btn-open-import" class="nav-item" style="cursor: pointer;">
-                    <span class="nav-icon">📤</span> Manual JSON Import
+                    <span class="nav-icon">📤</span>
+                    <span class="nav-text">Manual JSON Import</span>
                 </div>
             </nav>
             
@@ -53,8 +58,25 @@
 
         </aside>
 
-        <!-- Right Main Panel Container -->
-        <div class="main-content">
+        <!-- Main Content Area with sticky Mobile Top Header -->
+        <div class="main-layout-inner">
+            
+            <!-- Mobile Sticky Top Header -->
+            <div class="mobile-header glass">
+                <button id="mobile-sidebar-toggle" class="mobile-hamburger-btn" aria-label="Toggle Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="mobile-brand">
+                    <img src="logo.png" alt="logo" style="width: 24px; height: 24px; object-fit: contain; border-radius: 6px;">
+                    <span>SleepStudy</span>
+                </div>
+                <div style="width: 32px;"></div>
+            </div>
+
+            <!-- Right Main Panel Container -->
+            <div class="main-content">
             
             <!-- VIEW 1: DASHBOARD VIEW -->
             <div id="view-dashboard" class="tab-view active">
@@ -212,6 +234,13 @@
                                 <div class="form-group">
                                     <label>Sleep Aids Used</label>
                                     <div id="journal-sleep-aids-pool" class="tag-pool">
+                                        <!-- Rendered dynamically -->
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Sleep Disruptors (Negative Impact)</label>
+                                    <div id="journal-sleep-disruptors-pool" class="tag-pool">
                                         <!-- Rendered dynamically -->
                                     </div>
                                 </div>
@@ -417,11 +446,11 @@
                 </div>
             </div>
 
-            <!-- VIEW 3: SLEEP AIDS CONFIGURATION VIEW -->
+            <!-- VIEW 3: SLEEP FACTORS CONFIGURATION VIEW -->
             <div id="view-sleep-aids" class="tab-view">
                 <header class="view-header glass">
                     <div class="header-title">
-                        <h1>Sleep Aids</h1>
+                        <h1>Sleep Factors</h1>
                         <span class="badge badge-primary">Configuration</span>
                     </div>
                 </header>
@@ -431,8 +460,8 @@
                         <div class="connector-meta">
                             <span class="connector-icon">🩹</span>
                             <div>
-                                <h2>Sleep Aid Tags</h2>
-                                <p>Create and manage custom sleep aid tags (e.g. Nose Strips, Eye Mask, Earplugs) to tag your sleep journal entries.</p>
+                                <h2>Sleep Aids & Disruptors</h2>
+                                <p>Manage custom factors (Sleep Aids to support sleep, or Sleep Disruptors like alcohol that hinder sleep and worsen snoring) to tag your sleep journal entries.</p>
                             </div>
                         </div>
                     </div>
@@ -440,10 +469,17 @@
                     <div class="connector-card-body">
                         <!-- Add sleep aid form -->
                         <form id="add-sleep-aid-form" class="config-form" style="margin-bottom: 24px;">
-                            <div style="display: flex; gap: 12px; align-items: flex-end;">
-                                <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
-                                    <label for="new-sleep-aid-name">New Sleep Aid Tag</label>
-                                    <input type="text" id="new-sleep-aid-name" placeholder="e.g. Nose Strips" required autocomplete="off">
+                            <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+                                <div class="form-group" style="flex-grow: 1; margin-bottom: 0; min-width: 200px;">
+                                    <label for="new-sleep-aid-name">New Tag Name</label>
+                                    <input type="text" id="new-sleep-aid-name" placeholder="e.g. Alcohol, Nose Strips" required autocomplete="off">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
+                                    <label for="new-sleep-aid-category">Category</label>
+                                    <select id="new-sleep-aid-category">
+                                        <option value="aid">Sleep Aid (Positive)</option>
+                                        <option value="disruptor">Sleep Disruptor (Negative)</option>
+                                    </select>
                                 </div>
                                 <button type="submit" class="btn btn-primary" style="height: 42px;">Add Tag</button>
                             </div>
@@ -451,11 +487,22 @@
 
                         <hr class="card-divider">
 
-                        <!-- Configured sleep aids list -->
-                        <h3>Currently Configured Tags</h3>
-                        <p class="section-desc" style="margin-bottom: 16px;">Delete tags you no longer wish to see. Existing journal entries will retain their tags.</p>
-                        <div id="sleep-aids-config-list" class="tag-pool">
-                            <!-- Dynamic list of tags with a delete button -->
+                        <!-- Configured tags lists split by category -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+                            <div>
+                                <h3>Configured Sleep Aids (Positive)</h3>
+                                <p class="section-desc" style="margin-bottom: 12px;">Factors used to improve sleep quality or stability.</p>
+                                <div id="sleep-aids-config-list" class="tag-pool">
+                                    <!-- Dynamic list of aids tags -->
+                                </div>
+                            </div>
+                            <div>
+                                <h3>Configured Sleep Disruptors (Negative)</h3>
+                                <p class="section-desc" style="margin-bottom: 12px;">Factors known to negatively impact sleep or snoring.</p>
+                                <div id="sleep-disruptors-config-list" class="tag-pool">
+                                    <!-- Dynamic list of disruptor tags -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -463,6 +510,10 @@
 
         </div>
     </div>
+</div>
+
+<!-- Sidebar overlay backdrop for mobile -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <!-- Manual Import Modal -->
     <div id="import-modal" class="modal-overlay" style="display: none;">
@@ -499,6 +550,6 @@
     </div>
 
     <script src="qrious.min.js?v=2"></script>
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=6"></script>
 </body>
 </html>

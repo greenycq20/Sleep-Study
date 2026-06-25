@@ -127,9 +127,11 @@ class NotesUpdate(BaseModel):
     notes: str
     sleep_position: Optional[str] = None
     sleep_aids: Optional[str] = None
+    sleep_disruptors: Optional[str] = None
 
 class SleepAidCreate(BaseModel):
     name: str
+    category: Optional[str] = "aid"
 
 class SyncRequest(BaseModel):
     date: str  # YYYY-MM-DD
@@ -327,14 +329,15 @@ def get_session_details(session_id: str, db: Session = Depends(get_db)):
 
 @app.post("/api/sessions/{session_id}/notes")
 def update_session_notes(session_id: str, notes_data: NotesUpdate, db: Session = Depends(get_db)):
-    """Update user ratings, notes, sleep position, and sleep aids for a specific sleep session."""
+    """Update user ratings, notes, sleep position, sleep aids, and sleep disruptors for a specific sleep session."""
     session = crud.update_sleep_session_notes(
         db=db,
         session_id=session_id,
         rating=notes_data.rating,
         notes=notes_data.notes,
         sleep_position=notes_data.sleep_position,
-        sleep_aids=notes_data.sleep_aids
+        sleep_aids=notes_data.sleep_aids,
+        sleep_disruptors=notes_data.sleep_disruptors
     )
     if not session:
         raise HTTPException(status_code=404, detail="Sleep session not found.")
@@ -350,10 +353,10 @@ def get_sleep_aids(db: Session = Depends(get_db)):
 
 @app.post("/api/sleep_aids")
 def create_sleep_aid(aid_data: SleepAidCreate, db: Session = Depends(get_db)):
-    """Create a new unique sleep aid tag."""
+    """Create a new unique sleep aid or disruptor tag."""
     if not aid_data.name.strip():
-        raise HTTPException(status_code=400, detail="Sleep aid name cannot be empty.")
-    aid = crud.create_sleep_aid(db, aid_data.name)
+        raise HTTPException(status_code=400, detail="Tag name cannot be empty.")
+    aid = crud.create_sleep_aid(db, aid_data.name, aid_data.category)
     return aid.to_dict()
 
 

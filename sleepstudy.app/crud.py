@@ -70,14 +70,15 @@ def create_sleep_session(
     db.refresh(db_session)
     return db_session
 
-def update_sleep_session_notes(db: Session, session_id: str, rating: int, notes: str, sleep_position: str = None, sleep_aids: str = None):
-    """Update user ratings, notes, sleep position, and sleep aids for a sleep session."""
+def update_sleep_session_notes(db: Session, session_id: str, rating: int, notes: str, sleep_position: str = None, sleep_aids: str = None, sleep_disruptors: str = None):
+    """Update user ratings, notes, sleep position, sleep aids, and sleep disruptors for a sleep session."""
     db_session = get_sleep_session(db, session_id)
     if db_session:
         db_session.rating = rating
         db_session.notes = notes
         db_session.sleep_position = sleep_position
         db_session.sleep_aids = sleep_aids
+        db_session.sleep_disruptors = sleep_disruptors
         db.commit()
         db.refresh(db_session)
     return db_session
@@ -190,15 +191,15 @@ def get_sleep_aids(db: Session):
     """Retrieve all configured sleep aids ordered by name."""
     return db.query(db_models.SleepAid).order_by(db_models.SleepAid.name.asc()).all()
 
-def create_sleep_aid(db: Session, name: str):
-    """Create a new unique sleep aid tag. If it already exists, return it."""
+def create_sleep_aid(db: Session, name: str, category: str = "aid"):
+    """Create a new unique sleep aid or disruptor tag. If it already exists, return it."""
     # Normalise name to strip leading/trailing whitespace
     name = name.strip()
     existing = db.query(db_models.SleepAid).filter(db_models.SleepAid.name == name).first()
     if existing:
         return existing
     
-    db_aid = db_models.SleepAid(name=name)
+    db_aid = db_models.SleepAid(name=name, category=category)
     db.add(db_aid)
     db.commit()
     db.refresh(db_aid)
