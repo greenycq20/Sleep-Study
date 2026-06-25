@@ -1,13 +1,13 @@
 # Local SQLite databases
 *.db
-docker-dashboard/*.db
-docker-dashboard/data/sleep_study.db
+sleepstudy.app/*.db
+sleepstudy.app/data/sleep_study.db
 
 # Garmin tokens and tokens store cache
-docker-dashboard/data/garmin_tokens/
+sleepstudy.app/data/garmin_tokens/
 
 # Debug raw files
-docker-dashboard/data/garmin_raw_*.json
+sleepstudy.app/data/garmin_raw_*.json
 
 # Python environments and compilation caches
 __pycache__/

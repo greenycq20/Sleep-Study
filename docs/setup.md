@@ -14,7 +14,7 @@ Ensure you have Docker installed on your host server (e.g. Unraid, Synology, Ubu
 ### A. Build the Image Locally
 Clone the repository, navigate to the project directory, and run the Docker build command:
 ```bash
-docker build -t sleepstudy-app:latest ./docker-dashboard
+docker build -t sleepstudy-app:latest ./sleepstudy.app
 ```
 
 ### B. Run the Container
