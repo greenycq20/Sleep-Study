@@ -31,6 +31,8 @@ These are substances, habits, or conditions that impair sleep architecture and r
 
 When you select any sleep session from the main dashboard, the **Sleep Journal** panel loads on the right side of the screen.
 
+![Sleep Journal](./SleepJournal.png)
+
 *   **Sleep Rating**: Subjective recovery quality from 1 to 5 stars.
 *   **Sleep Position**: Primary sleep orientation (e.g., *Back*, *Left Side*, *Right Side*, *Stomach*, or *Mixed/Other*).
 *   **Sleep Aids**: Click to toggle active aids. Selected aids glow **neon indigo**.
@@ -44,6 +46,8 @@ Click **Save Journal Entry** to write changes directly to the persistent SQLite 
 ## 3. Managing Custom Tags (Sleep Factors Page)
 
 You can customize the pool of available tags by navigating to the **Sleep Factors** tab (🩹 icon) in the left sidebar menu.
+
+![Sleep Factors Configuration](./SleepAids.png)
 
 ### Adding a Tag
 1. Enter a descriptive name in the input field.
