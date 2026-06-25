@@ -60,8 +60,23 @@ const elBtnDownloadRawGarmin = document.getElementById("btn-download-raw-garmin"
 
 let selectedFile = null;
 
+function saveTimezoneOffset() {
+    try {
+        const offsetMinutes = new Date().getTimezoneOffset();
+        const offsetHours = -offsetMinutes / 60;
+        fetch("/api/connectors/system/config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ timezone_offset: offsetHours.toString() })
+        });
+    } catch (err) {
+        console.error("Failed to save timezone offset:", err);
+    }
+}
+
 // --- Initialize App ---
 document.addEventListener("DOMContentLoaded", () => {
+    saveTimezoneOffset();
     fetchConnectors();
     fetchSessions();
     fetchSleepAids();

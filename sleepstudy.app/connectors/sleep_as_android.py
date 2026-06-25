@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+from sqlalchemy.orm import Session
 from connectors.base import BaseConnector
 
 class SleepAsAndroidConnector(BaseConnector):
@@ -15,7 +16,7 @@ class SleepAsAndroidConnector(BaseConnector):
     def description(self) -> str:
         return "Ingests real-time snoring, coughing, and tracking state events pushed automatically via webhooks."
 
-    def parse_payload(self, raw_payload: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_payload(self, raw_payload: Dict[str, Any], db: Optional[Session] = None) -> Dict[str, Any]:
         """
         Parses a single real-time Sleep as Android webhook event.
         Payload format:
@@ -31,8 +32,8 @@ class SleepAsAndroidConnector(BaseConnector):
             if not event_name:
                 raise ValueError("Payload missing required 'event' or 'event_name' key.")
 
-            # 1. Parse Event Timestamp (extract from value1/timestamp or default to local now)
-            timestamp = datetime.now()
+            # 1. Parse Event Timestamp in UTC (extract from value1/timestamp or default to UTC now)
+            timestamp_utc = datetime.utcnow()
             for field in ["timestamp", "value1", "value2"]:
                 val = raw_payload.get(field)
                 if val:
@@ -40,29 +41,56 @@ class SleepAsAndroidConnector(BaseConnector):
                     try:
                         ts = float(val)
                         if ts > 1e11:  # Milliseconds
-                            timestamp = datetime.fromtimestamp(ts / 1000.0)
+                            timestamp_utc = datetime.utcfromtimestamp(ts / 1000.0)
                         else:  # Seconds
-                            timestamp = datetime.fromtimestamp(ts)
+                            timestamp_utc = datetime.utcfromtimestamp(ts)
                         break
                     except (ValueError, TypeError):
                         # Try parsing as ISO format if possible
                         try:
-                            timestamp = datetime.fromisoformat(val)
+                            parsed_dt = datetime.fromisoformat(val)
+                            if parsed_dt.tzinfo is not None:
+                                timestamp_utc = parsed_dt.astimezone(timedelta(0)).replace(tzinfo=None)
+                            else:
+                                timestamp_utc = parsed_dt
                             break
                         except ValueError:
                             pass
 
-            # 2. Determine morning date for sleep session mapping
-            # If tracking starts/event occurs noon or later, it belongs to tomorrow morning's date.
-            # If it occurs before noon, it belongs to today morning's date.
-            if timestamp.hour >= 12:
-                morning_date = (timestamp + timedelta(days=1)).strftime("%Y-%m-%d")
+            # 2. Retrieve timezone offset from system settings or environment variable
+            import os
+            timezone_offset = 0.0
+            if db:
+                try:
+                    from sqlalchemy import and_
+                    import database as db_models
+                    config_record = db.query(db_models.ConnectorConfig).filter(
+                        and_(
+                            db_models.ConnectorConfig.connector_id == "system",
+                            db_models.ConnectorConfig.config_key == "timezone_offset"
+                        )
+                    ).first()
+                    if config_record:
+                        timezone_offset = float(config_record.config_value)
+                except Exception as db_err:
+                    print(f"[SleepAsAndroid] Error reading timezone_offset from DB: {db_err}")
+            
+            # Allow environment override (e.g. if run offline/manually tested)
+            timezone_offset = float(os.getenv("TIMEZONE_OFFSET", timezone_offset))
+
+            # 3. Determine local morning date using the timezone offset
+            local_timestamp = timestamp_utc + timedelta(hours=timezone_offset)
+
+            # If tracking starts/event occurs noon or later local time, it belongs to tomorrow morning's date.
+            # If it occurs before noon local time, it belongs to today morning's date.
+            if local_timestamp.hour >= 12:
+                morning_date = (local_timestamp + timedelta(days=1)).strftime("%Y-%m-%d")
             else:
-                morning_date = timestamp.strftime("%Y-%m-%d")
+                morning_date = local_timestamp.strftime("%Y-%m-%d")
 
             session_id = f"garmin_{morning_date.replace('-', '')}"
 
-            # 3. Handle specific event logic
+            # 4. Handle specific event logic
             # Standardize event names
             event_lower = event_name.lower()
             start_time = None
@@ -90,18 +118,18 @@ class SleepAsAndroidConnector(BaseConnector):
             }
 
             if event_lower == "sleep_tracking_started":
-                start_time = timestamp
-                end_time = timestamp
+                start_time = timestamp_utc
+                end_time = timestamp_utc
                 overwrite_times = True
             elif event_lower in ["sleep_tracking_stopped", "sleep_tracking_finished"]:
-                end_time = timestamp
+                end_time = timestamp_utc
                 overwrite_times = True
             elif event_lower in sound_metrics:
                 metric_type = sound_metrics[event_lower]
                 # Occurrence sound event (count 1.0)
                 samples.append({
                     "metric_type": metric_type,
-                    "timestamp": timestamp,
+                    "timestamp": timestamp_utc,
                     "value_numeric": 1.0,
                     "raw_payload": raw_payload
                 })
