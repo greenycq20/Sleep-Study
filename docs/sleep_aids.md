@@ -7,8 +7,10 @@ The Sleep Journal and Sleep Aids system in `sleepstudy.app` allows you to track,
 ## 1. The Sleep Journal
 
 When you select any sleep session from the main dashboard, the **Sleep Journal** panel loads on the right side of the screen.
+![Sleep Journal](./SleepJournal.png)
 
 ### Journal Parameters:
+
 1. **Sleep Rating**: Evaluate your subjective recovery quality from 1 to 5 stars.
 2. **Sleep Position**: Choose your primary sleep orientation during the night (e.g., *Back*, *Left Side*, *Right Side*, *Stomach*, or *Mixed/Other*).
 3. **Sleep Aids**: Click to toggle active aids used for that specific night's sleep. Active aids glow indigo.
