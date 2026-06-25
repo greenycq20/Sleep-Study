@@ -1,78 +1,21 @@
 # Data Connectors
 
-`sleepstudy.app` features a modular connectors architecture to ingest sleep statistics and time-series physiological metrics. There are currently three connectors implemented:
+`sleepstudy.app` supports multiple pathways to ingest sleep periods, sleep stages, and time-series vitals or noise metrics. 
+
+Refer to the individual connector guides below for detailed instructions, credentials setups, API specifications, and JSON payload formats:
 
 ---
 
-## 1. Garmin Connect
+## Available Connectors
 
-Connects to Garmin cloud to sync sleep periods and vitals tracked by your Garmin smartwatch.
+### 1. ⌚ [Garmin Connect](connectors/garmin.md)
+*Cloud Sync Integration*
+Fetch overnight sleep segments, sleep score, resting heart rate, average HRV, body battery dynamics, respiration epoch metrics, stress levels, and SpO2. Features hourly background auto-sync daemon checking and auto-pruning cache optimization.
 
-### Features
-* **Full Stage Resolution**: Imports sleep intervals (Awake, REM, Light, Deep).
-- **Physiological Vitals**: Overnight heart rate, average HRV, HRV status, Body Battery change, epoch respiration, stress, and oxygen saturation (SpO2).
-- **Hourly Auto-Sync**: Automatically checks if today's sleep session is present in the database. If missing, it queries Garmin's API.
-- **Storage Optimization**: Automatically prunes raw Garmin API caches (`garmin_raw_*.json`) in the data directory, keeping only the 7 most recent days of files to prevent host system disk exhaustion.
+### 2. 🎤 [Snore & Cough Custom App (Preview)](connectors/snore_cough_app.md)
+*Custom API Integration*
+An HTTP POST listener endpoint designed to receive time-series snoring and coughing sound events pushed from a microphone client. Includes dynamic QR Code app enrollment configurations.
 
-### Credentials Setup
-Save your Garmin credentials in the settings dashboard:
-* **Garmin Email**: Your Garmin Connect account email.
-* **Garmin Password**: Your account password.
-* **Auto-Sync**: Check to enable hourly background sync daemon thread.
-
----
-
-## 2. Snore & Cough Custom App (Preview)
-
-A custom HTTP POST API listener endpoint designed to ingest overnight sound events (snoring duration and coughing count) recorded by a secondary microphone client.
-
-### Endpoints
-* **URL**: `POST /api/connectors/snore_cough_app/import`
-- **Session Merging**: paylaod is matched to the corresponding Garmin watch session of the same night by using the deterministic format `garmin_YYYYMMDD` (representing the morning date). If no Garmin watch data exists, a session container is still created to view sound events.
-- **Expected JSON Payload Format**:
-  ```json
-  {
-    "date": "2026-06-25",
-    "start_time": "2026-06-24T22:30:00",
-    "end_time": "2026-06-25T06:45:00",
-    "snore_events": [
-      {
-        "timestamp": "2026-06-25T01:15:22",
-        "duration": 18
-      },
-      {
-        "timestamp": "2026-06-25T03:42:10",
-        "duration": 5
-      }
-    ],
-    "cough_events": [
-      {
-        "timestamp": "2026-06-25T02:30:15",
-        "count": 2
-      }
-    ]
-  }
-  ```
-
-### App Enrollment QR Code
-To streamline enrollment, the dashboard displays a scan configuration QR Code inside settings. It encodes:
-```json
-{
-  "connector_id": "snore_cough_app",
-  "endpoint_url": "http://your-server-ip:8000/api/connectors/snore_cough_app/import"
-}
-```
-Client applications can scan this to auto-configure their endpoint destinations.
-
----
-
-## 3. Sleep as Android Webhook (Preview)
-
-Allows real-time logging of audio events using Webhooks from the Sleep as Android automation suite.
-
-### Webhook Configuration
-1. Open settings in **Sleep as Android**.
-2. Go to **Services** → **Automation** → **Webhooks**.
-3. Enable webhooks and input the dashboard endpoint:
-   `http://your-server-ip:8000/api/connectors/sleep_as_android/import`
-4. The mobile app will post events dynamically as they occur during sleep.
+### 3. 🔊 [Sleep as Android Webhook (Preview)](connectors/sleep_as_android.md)
+*Webhook Integration*
+Ingests webhook event streams pushed automatically from the Sleep as Android app automation settings.
