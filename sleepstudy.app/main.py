@@ -98,7 +98,7 @@ async def lifespan(app: FastAPI):
     pass
 
 app = FastAPI(
-    title="Local Sleep Study Dashboard",
+    title="sleepstudy.app",
     description="Self-hosted dashboard to review, align, and note sleep datasets.",
     lifespan=lifespan
 )

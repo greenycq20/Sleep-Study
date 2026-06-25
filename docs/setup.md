@@ -30,6 +30,10 @@ docker run -d \
 * **`-p 8000:8000`**: Maps port 8000 to access the UI on your network.
 * **`-v /app/data`**: Map this folder to a persistent directory on your host. This ensures your configurations and database are not lost when rebuilding or updating the container.
 
+### C. Docker Dashboard / Unraid Custom Icon
+For platforms that support custom container icons (such as Unraid templates or custom dashboards), use the following hosted URL:
+* **Icon URL**: `https://raw.githubusercontent.com/greenycq20/Sleep-Study/main/docs/logo.png`
+
 ---
 
 ## 3. Database & Storage Architecture
