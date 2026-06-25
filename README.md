@@ -24,4 +24,5 @@ To help you get started with deploying, configuring, and updating the applicatio
 
 - 🚀 **[Installation & Setup Guide](docs/setup.md)**: Steps for building the Docker image, mapping persistent volumes, and understanding the SQLite table schemas.
 - 🔌 **[Data Connectors & APIs Specification](docs/connectors.md)**: Technical specs for the Garmin Cloud Auto-Sync daemon, the Snore & Cough HTTP POST JSON schema, and the Sleep as Android webhook endpoint configuration.
+- 🩹 **[Sleep Journal & Sleep Aids Guide](docs/sleep_aids.md)**: Guide to tracking sleep positions, logging notes, and managing custom sleep aid tags in the database.
 - 📝 **[Changelog](CHANGELOG.md)**: History of releases, features added, and versions tracking.
