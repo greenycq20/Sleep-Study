@@ -15,7 +15,7 @@ To configure the Garmin Connect connector:
 5. Check **Enable Auto-Sync** if you want the dashboard to automatically check and download today's sleep metrics in the background once every hour.
 6. Click **Save Settings & Credentials**. Once successfully saved, the status badge in the upper right of the card will switch to **Configured** (green).
 
-![Garmin Connect Configuration Card Settings UI](../garmin.png)
+![Garmin Connect Configuration Card Settings UI](./garmin.png)
 
 ---
 
