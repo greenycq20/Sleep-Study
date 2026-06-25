@@ -22,7 +22,7 @@ Click **Save Journal Entry** to write changes directly to the persistent SQLite 
 
 You can customize the available sleep aid tags by navigating to the **Sleep Aids** tab in the left sidebar navigation menu.
 
-![Sleep Aids Configuration](./Sleep Aids.png)
+![Sleep Aids Configuration](./SleepAids.png)
 
 ### Adding a New Tag:
 1. Go to the **Sleep Aids** page.
